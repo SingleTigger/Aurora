@@ -1,0 +1,22 @@
+group = 'com.chenws.iot'
+version APP_VERSION
+sourceCompatibility = '1.8'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    compile group: 'org.projectlombok', name: 'lombok',version: '1.18.8'
+    compile group: 'com.alibaba', name: 'fastjson', version: '1.2.59'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-test'
+    compile group: 'org.apache.commons', name: 'commons-lang3'
+    compile group: 'com.github.pagehelper', name: 'pagehelper-spring-boot-starter',version: '1.2.12'
+    compile group: 'tk.mybatis', name: 'mapper-spring-boot-starter',version: '2.1.5'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-redis'
+}

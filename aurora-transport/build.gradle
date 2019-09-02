@@ -1,0 +1,13 @@
+group = 'com.chenws.iot'
+version APP_VERSION
+sourceCompatibility = '1.8'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(':aurora-common')
+    compile group: 'io.netty', name: 'netty-all', version: '4.1.39.Final'
+
+}
