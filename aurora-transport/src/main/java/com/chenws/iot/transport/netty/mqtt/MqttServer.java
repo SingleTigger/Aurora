@@ -1,5 +1,6 @@
 package com.chenws.iot.transport.netty.mqtt;
 
+import com.chenws.iot.transport.netty.mqtt.protocol.Process;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -8,6 +9,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -45,6 +47,9 @@ public class MqttServer {
 
     private Channel serverChannel;
 
+    @Autowired
+    private Process process;
+
     @PostConstruct
     public void init() throws Exception{
         log.info("MQTT starting.");
@@ -59,7 +64,7 @@ public class MqttServer {
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast("decoder", new MqttDecoder(maxPayloadSize));
                         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
-                        MqttTransportHandler handler = new MqttTransportHandler();
+                        MqttTransportHandler handler = new MqttTransportHandler(process);
                         pipeline.addLast(handler);
                     }
                 })
