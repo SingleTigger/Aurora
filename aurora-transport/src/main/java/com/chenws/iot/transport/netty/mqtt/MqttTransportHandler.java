@@ -33,36 +33,36 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
         InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
         if (msg.fixedHeader() == null) {
             log.info("[{}:{}] Invalid message received", address.getHostName(), address.getPort());
-            process.processDisconnect(ctx);
+//            process.processDisconnect(ctx);
             return;
         }
         switch (msg.fixedHeader().messageType()) {
             case CONNECT:
-                process.getConnect().handleConnect(ctx, (MqttConnectMessage) msg);
+                process.getConnect().handleConnect(ctx.channel(), (MqttConnectMessage) msg);
                 break;
             case PUBLISH:
-                process.processPublish(ctx, (MqttPublishMessage) msg);
+                process.getPublish().handlePublish(ctx.channel(), (MqttPublishMessage) msg);
                 break;
-            case SUBSCRIBE:
-                process.processSubscribe(ctx, (MqttSubscribeMessage) msg);
-                break;
-            case UNSUBSCRIBE:
-                process.processUnsubscribe(ctx, (MqttUnsubscribeMessage) msg);
-                break;
-            case PINGREQ:
-                if (checkConnected(ctx, msg)) {
-                ctx.writeAndFlush(new MqttMessage(new MqttFixedHeader(PINGRESP, false, AT_MOST_ONCE, false, 0)));
-                transportService.reportActivity(sessionInfo);
-                if (gatewaySessionHandler != null) {
-                    gatewaySessionHandler.reportActivity();
-                }
-            }
-                break;
-            case DISCONNECT:
-                if (checkConnected(ctx, msg)) {
-                    processDisconnect(ctx);
-                }
-                break;
+//            case SUBSCRIBE:
+//                process.processSubscribe(ctx, (MqttSubscribeMessage) msg);
+//                break;
+//            case UNSUBSCRIBE:
+//                process.processUnsubscribe(ctx, (MqttUnsubscribeMessage) msg);
+//                break;
+//            case PINGREQ:
+//                if (checkConnected(ctx, msg)) {
+//                ctx.writeAndFlush(new MqttMessage(new MqttFixedHeader(PINGRESP, false, AT_MOST_ONCE, false, 0)));
+//                transportService.reportActivity(sessionInfo);
+//                if (gatewaySessionHandler != null) {
+//                    gatewaySessionHandler.reportActivity();
+//                }
+//            }
+//                break;
+//            case DISCONNECT:
+//                if (checkConnected(ctx, msg)) {
+//                    processDisconnect(ctx);
+//                }
+//                break;
             default:
                 break;
         }
