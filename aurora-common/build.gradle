@@ -20,5 +20,7 @@ dependencies {
     compile group: 'tk.mybatis', name: 'mapper-spring-boot-starter',version: '2.1.5'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-redis'
     compile group: 'cn.hutool', name: 'hutool-all', version: '4.6.8'
+    compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
+
 
 }

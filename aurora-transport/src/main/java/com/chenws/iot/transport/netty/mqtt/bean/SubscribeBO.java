@@ -1,11 +1,13 @@
 package com.chenws.iot.transport.netty.mqtt.bean;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Created by chenws on 2019/10/9.
  */
 @Data
+@NoArgsConstructor
 public class SubscribeBO {
 
     private String clientId;

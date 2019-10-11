@@ -4,6 +4,8 @@ import com.chenws.iot.transport.netty.mqtt.protocol.Process;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.mqtt.*;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
@@ -15,7 +17,7 @@ import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
  * Created by chenws on 2019/8/31.
  */
 @Slf4j
-public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessage> {
+public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessage> implements GenericFutureListener<Future<? super Void>> {
 
     private Process process;
 
@@ -43,30 +45,39 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
             case PUBLISH:
                 process.getPublish().handlePublish(ctx.channel(), (MqttPublishMessage) msg);
                 break;
-//            case SUBSCRIBE:
-//                process.processSubscribe(ctx, (MqttSubscribeMessage) msg);
+            case PUBACK:
+                process.getPubAck().handlePubAck(ctx.channel(), (MqttPubAckMessage) msg);
+                break;
+            case PUBREC:
+                process.getPubRec().handlePubRec(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
+                break;
+//            case PUBREL:
+//                protocolProcess.pubRel().processPubRel(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
 //                break;
-//            case UNSUBSCRIBE:
-//                process.processUnsubscribe(ctx, (MqttUnsubscribeMessage) msg);
+//            case PUBCOMP:
+//                protocolProcess.pubComp().processPubComp(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
 //                break;
-//            case PINGREQ:
-//                if (checkConnected(ctx, msg)) {
-//                ctx.writeAndFlush(new MqttMessage(new MqttFixedHeader(PINGRESP, false, AT_MOST_ONCE, false, 0)));
-//                transportService.reportActivity(sessionInfo);
-//                if (gatewaySessionHandler != null) {
-//                    gatewaySessionHandler.reportActivity();
-//                }
-//            }
-//                break;
-//            case DISCONNECT:
-//                if (checkConnected(ctx, msg)) {
-//                    processDisconnect(ctx);
-//                }
-//                break;
+            case SUBSCRIBE:
+                process.getSubscribe().handleSubscribe(ctx.channel(), (MqttSubscribeMessage) msg);
+                break;
+            case UNSUBSCRIBE:
+                process.getUnSubscribe().handleUnSubscribe(ctx.channel(), (MqttUnsubscribeMessage) msg);
+                break;
+            case PINGREQ:
+                process.getPingReq().handlePingReq(ctx.channel(), msg);
+                break;
+            case PINGRESP:
+                break;
+            case DISCONNECT:
+                process.getDisConnect().handleDisConnect(ctx.channel(), msg);
+                break;
             default:
                 break;
         }
     }
 
+    @Override
+    public void operationComplete(Future<? super Void> future) throws Exception {
 
+    }
 }

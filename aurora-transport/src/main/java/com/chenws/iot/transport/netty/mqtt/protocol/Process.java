@@ -20,4 +20,25 @@ public class Process {
     @Autowired
     private Publish publish;
 
+    @Autowired
+    private Subscribe subscribe;
+
+    @Autowired
+    private PubAck pubAck;
+
+    @Autowired
+    private PubComp pubComp;
+
+    @Autowired
+    private PubRec pubRec;
+
+    @Autowired
+    private PubRel pubRel;
+
+    @Autowired
+    private UnSubscribe unSubscribe;
+
+    @Autowired
+    private PingReq pingReq;
+
 }

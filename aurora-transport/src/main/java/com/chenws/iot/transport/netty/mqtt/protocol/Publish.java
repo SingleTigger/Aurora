@@ -1,9 +1,11 @@
 package com.chenws.iot.transport.netty.mqtt.protocol;
 
 import com.chenws.iot.transport.netty.mqtt.bean.DupPublishMessageBO;
+import com.chenws.iot.transport.netty.mqtt.bean.RetainMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.SubscribeBO;
 import com.chenws.iot.transport.netty.mqtt.service.DupPubRelMsgService;
 import com.chenws.iot.transport.netty.mqtt.service.DupPublishMsgService;
+import com.chenws.iot.transport.netty.mqtt.service.RetainMsgService;
 import com.chenws.iot.transport.netty.mqtt.service.SubscribeService;
 import com.chenws.iot.transport.netty.mqtt.session.MqttSessionCache;
 import io.netty.buffer.Unpooled;
@@ -33,7 +35,7 @@ public class Publish {
     private DupPublishMsgService dupPublishMsgService;
 
     @Autowired
-    private DupPubRelMsgService dupPubRelMsgService;
+    private RetainMsgService retainMsgService;
 
 
     public void handlePublish(Channel channel, MqttPublishMessage msg) {
@@ -41,9 +43,22 @@ public class Publish {
         String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
         MqttQoS mqttQoS = msg.fixedHeader().qosLevel();
         int packetId = msg.variableHeader().packetId();
-        if(mqttQoS == MqttQoS.AT_MOST_ONCE){
-            byte[] messageBytes = new byte[msg.payload().readableBytes()];
-            msg.payload().getBytes(msg.payload().readerIndex(), messageBytes);
+        byte[] messageBytes = new byte[msg.payload().readableBytes()];
+        msg.payload().getBytes(msg.payload().readerIndex(), messageBytes);
+        sendPublishMessage(msg.variableHeader().topicName(), msg.fixedHeader().qosLevel(), messageBytes, false, false,packetId);
+        if(mqttQoS == MqttQoS.AT_LEAST_ONCE){
+            sendPubAckMessage(channel, msg.variableHeader().packetId());
+        }
+        else if(mqttQoS == MqttQoS.EXACTLY_ONCE){
+            sendPubRecMessage(channel, msg.variableHeader().packetId());
+        }
+        if (msg.fixedHeader().isRetain()) {
+            if (messageBytes.length == 0) {
+                retainMsgService.remove(msg.variableHeader().topicName());
+            } else {
+                RetainMessageBO retainMessageBO = new RetainMessageBO(msg.variableHeader().topicName(),messageBytes,msg.fixedHeader().qosLevel().value());
+                retainMsgService.put(msg.variableHeader().topicName(), retainMessageBO);
+            }
         }
     }
 
@@ -80,5 +95,21 @@ public class Publish {
         return (MqttPublishMessage) MqttMessageFactory.newMessage(
                 new MqttFixedHeader(MqttMessageType.PUBLISH, dup, mqttQoS, retain, 0),
                 new MqttPublishVariableHeader(topic, packetId), Unpooled.buffer().writeBytes(messageBytes));
+    }
+
+    private void sendPubAckMessage(Channel channel, int messageId) {
+        MqttPubAckMessage pubAckMessage = (MqttPubAckMessage) MqttMessageFactory.newMessage(
+                new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                MqttMessageIdVariableHeader.from(messageId),
+                null);
+        channel.writeAndFlush(pubAckMessage);
+    }
+
+    private void sendPubRecMessage(Channel channel, int messageId) {
+        MqttMessage pubRecMessage = MqttMessageFactory.newMessage(
+                new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                MqttMessageIdVariableHeader.from(messageId),
+                null);
+        channel.writeAndFlush(pubRecMessage);
     }
 }

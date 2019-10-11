@@ -30,4 +30,9 @@ public interface RedisConstant {
      */
     String DUP_PUBREL_MESSAGE = "Aurora:pubrel:dup:";
 
+    /**
+     * retain保留信息
+     */
+    String RETAIN_MESSAGE = "Aurora:retain:";
+
 }
