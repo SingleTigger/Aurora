@@ -69,8 +69,6 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
             case PINGREQ:
                 process.getPingReq().handlePingReq(ctx.channel(), msg);
                 break;
-            case PINGRESP:
-                break;
             case DISCONNECT:
                 process.getDisConnect().handleDisConnect(ctx.channel(), msg);
                 break;

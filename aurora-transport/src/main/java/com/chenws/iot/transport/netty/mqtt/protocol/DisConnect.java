@@ -38,9 +38,9 @@ public class DisConnect {
             subscribeService.removeByClient(clientId);
             dupPublishMsgService.removeByClient(clientId);
             dupPubRelMsgService.removeByClient(clientId);
+            log.info("DISCONNECT - clientId: {}, cleanSession: {}", clientId, mqttSession.isCleanSession());
+            mqttSessionCache.remove(clientId);
         }
-        log.info("DISCONNECT - clientId: {}, cleanSession: {}", clientId, mqttSession.isCleanSession());
-        mqttSessionCache.remove(clientId);
         channel.close();
     }
 }

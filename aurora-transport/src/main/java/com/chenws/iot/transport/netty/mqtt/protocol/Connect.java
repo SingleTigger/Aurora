@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by chenws on 2019/10/9.
