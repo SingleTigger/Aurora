@@ -25,7 +25,7 @@ public class PubRec {
 
     public void handlePubRec(Channel channel, MqttMessageIdVariableHeader variableHeader) {
         MqttMessage pubRelMessage = MqttMessageFactory.newMessage(
-                new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_MOST_ONCE, false, 0),
                 MqttMessageIdVariableHeader.from(variableHeader.messageId()),
                 null);
         log.info("PUBREC - clientId: {}, messageId: {}", (String) channel.attr(AttributeKey.valueOf("clientId")).get(), variableHeader.messageId());

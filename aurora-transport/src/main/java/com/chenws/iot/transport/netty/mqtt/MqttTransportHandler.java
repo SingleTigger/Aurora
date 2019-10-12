@@ -1,17 +1,20 @@
 package com.chenws.iot.transport.netty.mqtt;
 
 import com.chenws.iot.transport.netty.mqtt.protocol.Process;
+import com.chenws.iot.transport.netty.mqtt.session.MqttSession;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
-
-import static io.netty.handler.codec.mqtt.MqttMessageType.PINGRESP;
-import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
 
 /**
  * Created by chenws on 2019/8/31.
@@ -21,21 +24,21 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
 
     private Process process;
 
-    public MqttTransportHandler(Process process){
+    public MqttTransportHandler(Process process) {
         this.process = process;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, MqttMessage msg) throws Exception {
         log.info("Accept msg: {}", msg);
-        handleMqttMessage(ctx,msg);
+        handleMqttMessage(ctx, msg);
     }
 
     private void handleMqttMessage(ChannelHandlerContext ctx, MqttMessage msg) {
         InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
         if (msg.fixedHeader() == null) {
             log.info("[{}:{}] Invalid message received", address.getHostName(), address.getPort());
-//            process.processDisconnect(ctx);
+            process.getDisConnect().handleDisConnect(ctx.channel(), msg);
             return;
         }
         switch (msg.fixedHeader().messageType()) {
@@ -51,12 +54,12 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
             case PUBREC:
                 process.getPubRec().handlePubRec(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
                 break;
-//            case PUBREL:
-//                protocolProcess.pubRel().processPubRel(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
-//                break;
-//            case PUBCOMP:
-//                protocolProcess.pubComp().processPubComp(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
-//                break;
+            case PUBREL:
+                process.getPubRel().handlePubRel(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
+                break;
+            case PUBCOMP:
+                process.getPubComp().handlePubComp(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
+                break;
             case SUBSCRIBE:
                 process.getSubscribe().handleSubscribe(ctx.channel(), (MqttSubscribeMessage) msg);
                 break;
@@ -79,5 +82,47 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
     @Override
     public void operationComplete(Future<? super Void> future) throws Exception {
 
+    }
+
+    /**
+     * 长时间没接受或发送
+     * @param ctx
+     * @param evt
+     * @throws Exception
+     */
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt instanceof IdleStateEvent) {
+            IdleStateEvent idleStateEvent = (IdleStateEvent) evt;
+            if (idleStateEvent.state() == IdleState.ALL_IDLE) {
+                Channel channel = ctx.channel();
+                String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
+                // 发送遗嘱消息
+                if (process.getMqttSessionCache().containsKey(clientId)) {
+                    MqttSession mqttSession = process.getMqttSessionCache().get(clientId);
+                    if (mqttSession.getWillMessage() != null) {
+                        process.getPublish().handlePublish(ctx.channel(), mqttSession.getWillMessage());
+                    }
+                }
+                ctx.close();
+            }
+        } else {
+            super.userEventTriggered(ctx, evt);
+        }
+    }
+
+    /**
+     * 中断连接
+     * @param ctx
+     * @param cause
+     * @throws Exception
+     */
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        if(cause instanceof IOException){
+            process.getDisConnect().handleDisConnect(ctx.channel(), null);
+        }else {
+            super.exceptionCaught(ctx, cause);
+        }
     }
 }

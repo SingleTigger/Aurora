@@ -1,5 +1,6 @@
 package com.chenws.iot.transport.netty.mqtt.protocol;
 
+import com.chenws.iot.transport.netty.mqtt.session.MqttSessionCache;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -10,6 +11,9 @@ import org.springframework.stereotype.Component;
 @Component
 @Getter
 public class Process {
+
+    @Autowired
+    private MqttSessionCache mqttSessionCache;
 
     @Autowired
     private Connect connect;
