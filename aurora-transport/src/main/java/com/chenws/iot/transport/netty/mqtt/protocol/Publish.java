@@ -38,8 +38,6 @@ public class Publish {
 
 
     public void handlePublish(Channel channel, MqttPublishMessage msg) {
-        //得到用户id
-        String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
         MqttQoS mqttQoS = msg.fixedHeader().qosLevel();
         int packetId = msg.variableHeader().packetId();
         byte[] messageBytes = new byte[msg.payload().readableBytes()];

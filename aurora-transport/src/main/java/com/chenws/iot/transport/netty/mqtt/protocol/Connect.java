@@ -83,9 +83,6 @@ public class Connect {
         }
         //处理连接心跳包
         if (msg.variableHeader().keepAliveTimeSeconds() > 0){
-            if (channel.pipeline().names().contains("idle")){
-                channel.pipeline().remove("idle");
-            }
             channel.pipeline().addFirst("idle",new IdleStateHandler(0, 0, Math.round(msg.variableHeader().keepAliveTimeSeconds() * 1.5f)));
         }
         mqttSessionCache.put(msg.payload().clientIdentifier(),mqttSession);
