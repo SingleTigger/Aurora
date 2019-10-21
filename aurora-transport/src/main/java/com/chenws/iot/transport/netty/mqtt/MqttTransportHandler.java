@@ -79,7 +79,11 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
 
     @Override
     public void operationComplete(Future<? super Void> future) throws Exception {
-
+        if (future.isSuccess()){
+            log.info("future success");
+        }else{
+            log.info("future fail");
+        }
     }
 
     /**
@@ -118,7 +122,16 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if(cause instanceof IOException){
-            process.getDisConnect().handleDisConnect(ctx.channel(), null);
+            Channel channel = ctx.channel();
+            String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
+            // 发送遗嘱消息
+            if (process.getMqttSessionCache().containsKey(clientId)) {
+                MqttSession mqttSession = process.getMqttSessionCache().get(clientId);
+                if (mqttSession.getWillMessage() != null) {
+                    process.getPublish().handlePublish(ctx.channel(), mqttSession.getWillMessage());
+                }
+            }
+            ctx.close();
         }else {
             super.exceptionCaught(ctx, cause);
         }

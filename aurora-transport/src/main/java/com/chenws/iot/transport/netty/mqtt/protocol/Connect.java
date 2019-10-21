@@ -54,6 +54,7 @@ public class Connect {
             replyConnAckMessage(channel,MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
             return;
         }
+        //TODO valid username & password
         if(mqttSessionCache.containsKey(clientIdentifier)){
             MqttSession mqttSession = mqttSessionCache.get(clientIdentifier);
             boolean cleanSession = mqttSession.isCleanSession();
@@ -96,20 +97,20 @@ public class Connect {
 
         // 如果cleanSession为0, 需要重发同一clientId存储的未完成的QoS1和QoS2的DUP消息
         if (!msg.variableHeader().isCleanSession()){
-            List<DupPublishMessageBO> dupPublishMessageStoreList = dupPublishMsgService.get(msg.payload().clientIdentifier());
-            List<DupPubRelMessageBO> dupPubRelMessageStoreList = dupPubRelMsgService.get(msg.payload().clientIdentifier());
-            dupPublishMessageStoreList.forEach(dupPublishMessageStore -> {
+            List<DupPublishMessageBO> dupPublishMessageBOS = dupPublishMsgService.get(msg.payload().clientIdentifier());
+            List<DupPubRelMessageBO> dupPubRelMessageBOS = dupPubRelMsgService.get(msg.payload().clientIdentifier());
+            dupPublishMessageBOS.forEach(dupPublishMessageBO -> {
                 MqttPublishMessage publishMessage = (MqttPublishMessage)MqttMessageFactory.newMessage(
-                        new MqttFixedHeader(MqttMessageType.PUBLISH,true,MqttQoS.valueOf(dupPublishMessageStore.getMqttQoS()),false,0),
-                        new MqttPublishVariableHeader(dupPublishMessageStore.getTopicFilter(),dupPublishMessageStore.getMessageId()),
-                        Unpooled.buffer().writeBytes(dupPublishMessageStore.getMessageBytes())
+                        new MqttFixedHeader(MqttMessageType.PUBLISH,true,MqttQoS.valueOf(dupPublishMessageBO.getMqttQoS()),false,0),
+                        new MqttPublishVariableHeader(dupPublishMessageBO.getTopicFilter(),dupPublishMessageBO.getMessageId()),
+                        Unpooled.buffer().writeBytes(dupPublishMessageBO.getMessageBytes())
                 );
                 channel.writeAndFlush(publishMessage);
             });
-            dupPubRelMessageStoreList.forEach(dupPubRelMessageStore -> {
+            dupPubRelMessageBOS.forEach(dupPubRelMessageBO -> {
                 MqttMessage pubRelMessage = MqttMessageFactory.newMessage(
                         new MqttFixedHeader(MqttMessageType.PUBREL,true,MqttQoS.AT_MOST_ONCE,false,0),
-                        MqttMessageIdVariableHeader.from(dupPubRelMessageStore.getMessageId()),
+                        MqttMessageIdVariableHeader.from(dupPubRelMessageBO.getMessageId()),
                         null
                 );
                 channel.writeAndFlush(pubRelMessage);

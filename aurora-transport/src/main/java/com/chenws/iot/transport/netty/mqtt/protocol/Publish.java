@@ -63,7 +63,7 @@ public class Publish {
         List<SubscribeBO> subscribeBOS = subscribeService.search(topic);
         for (SubscribeBO subscribeBO : subscribeBOS) {
             if (mqttSessionCache.containsKey(subscribeBO.getClientId())) {
-                // 订阅者收到MQTT消息的QoS级别, 最终取决于发布消息的QoS和主题订阅的QoS
+                // 订阅者收到MQTT消息的QoS级别, 最终取决于发布消息的QoS和主题订阅的QoS，取小的
                 MqttQoS respQoS = mqttQoS.value() > subscribeBO.getMqttQoS() ? MqttQoS.valueOf(subscribeBO.getMqttQoS()) : mqttQoS;
                 if (respQoS == MqttQoS.AT_MOST_ONCE) {
                     MqttPublishMessage publishMessage = build(dup,respQoS,retain,topic,packetId,messageBytes);
