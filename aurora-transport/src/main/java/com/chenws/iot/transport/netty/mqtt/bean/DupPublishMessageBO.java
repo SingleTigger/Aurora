@@ -16,9 +16,9 @@ public class DupPublishMessageBO{
 
     private String topicFilter;
 
-    private int mqttQoS;
+    private Integer mqttQoS;
 
-    private int messageId;
+    private Integer messageId;
 
     private byte[] messageBytes;
 
