@@ -24,6 +24,12 @@ public interface SubscribeService {
     void remove(String topicFilter, String clientId);
 
     /**
+     * 删除clientId的订阅
+     * @param clientId
+     */
+    void removeByClient(String clientId);
+
+    /**
      * 获取订阅存储集
      * @param topic
      * @return

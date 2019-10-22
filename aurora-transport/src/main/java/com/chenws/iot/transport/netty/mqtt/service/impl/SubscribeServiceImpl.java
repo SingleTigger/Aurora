@@ -1,6 +1,7 @@
 package com.chenws.iot.transport.netty.mqtt.service.impl;
 
 import com.chenws.iot.transport.netty.mqtt.bean.SubscribeBO;
+import com.chenws.iot.transport.netty.mqtt.cache.subscribe.SubscribeClientCache;
 import com.chenws.iot.transport.netty.mqtt.service.SubscribeService;
 import com.chenws.iot.transport.netty.mqtt.topic.CTrie;
 import com.chenws.iot.transport.netty.mqtt.topic.Topic;
@@ -17,17 +18,31 @@ import java.util.Set;
 public class SubscribeServiceImpl implements SubscribeService {
 
     @Autowired
+    private SubscribeClientCache subscribeClientCache;
+
+    @Autowired
     private CTrie cTrie;
 
     @Override
     public void put(String topicFilter, SubscribeBO subscribeBO) {
         cTrie.addToTree(subscribeBO);
+        subscribeClientCache.putTopicFilter(subscribeBO.getClientId(),topicFilter);
     }
 
     @Override
     public void remove(String topicFilter, String clientId) {
         Topic topic = new Topic(topicFilter);
         cTrie.removeFromTree(topic,clientId);
+        subscribeClientCache.removeTopicFilter(clientId,topicFilter);
+    }
+
+    @Override
+    public void removeByClient(String clientId) {
+        Set<String> topicFilters = subscribeClientCache.topicFilterByClientId(clientId);
+        topicFilters.forEach(topicFilter -> {
+            Topic topic = new Topic(topicFilter);
+            cTrie.removeFromTree(topic,clientId);
+        });
     }
 
     @Override

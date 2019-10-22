@@ -61,6 +61,8 @@ public class Connect {
             if(cleanSession){
                 //清除session
                 mqttSessionCache.remove(clientIdentifier);
+                //清除相关的主题订阅
+                subscribeService.removeByClient(clientIdentifier);
                 //清除重发publish消息
                 dupPublishMsgService.removeByClient(clientIdentifier);
                 //清除重发pubrel消息
