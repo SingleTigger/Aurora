@@ -33,7 +33,6 @@ public interface DupPubRelMsgService {
     /**
      * 删除
      * @param clientId
-     * @param messageId
      */
     void removeByClient(String clientId);
 }
