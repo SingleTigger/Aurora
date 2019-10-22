@@ -2,7 +2,7 @@ package com.chenws.iot.transport.netty.mqtt.service;
 
 import com.chenws.iot.transport.netty.mqtt.bean.SubscribeBO;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * Created by chenws on 2019/10/9.
@@ -34,6 +34,6 @@ public interface SubscribeService {
      * @param topic
      * @return
      */
-    List<SubscribeBO> search(String topic);
+    Set<SubscribeBO> search(String topic);
 
 }

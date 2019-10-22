@@ -5,6 +5,7 @@ import com.chenws.iot.transport.netty.mqtt.bean.RetainMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.SubscribeBO;
 import com.chenws.iot.transport.netty.mqtt.service.RetainMsgService;
 import com.chenws.iot.transport.netty.mqtt.service.SubscribeService;
+import com.chenws.iot.transport.netty.mqtt.topic.Topic;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
@@ -45,7 +46,8 @@ public class Subscribe {
                 channel.writeAndFlush(subAckMessage);
                 this.sendRetainMessage(channel, topicFilter, mqttQoS);
 
-                SubscribeBO subscribeBO = new SubscribeBO(clientId, topicFilter, mqttQoS.value());
+                Topic topic = new Topic(topicFilter);
+                SubscribeBO subscribeBO = new SubscribeBO(clientId, topic, mqttQoS.value());
                 subscribeService.put(topicFilter, subscribeBO);
                 mqttQoSList.add(mqttQoS.value());
                 log.info("SUBSCRIBE - clientId: {}, topFilter: {}, QoS: {}", clientId, topicFilter, mqttQoS.value());

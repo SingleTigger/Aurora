@@ -11,13 +11,11 @@ import com.chenws.iot.transport.netty.mqtt.session.MqttSessionCache;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
-import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * Created by chenws on 2019/10/10.
@@ -64,7 +62,7 @@ public class Publish {
     }
 
     private void sendPublishMessage(String topic, MqttQoS mqttQoS, byte[] messageBytes, boolean retain) {
-        List<SubscribeBO> subscribeBOS = subscribeService.search(topic);
+        Set<SubscribeBO> subscribeBOS = subscribeService.search(topic);
         for (SubscribeBO subscribeBO : subscribeBOS) {
             if (mqttSessionCache.containsKey(subscribeBO.getClientId())) {
                 // 订阅者收到MQTT消息的QoS级别, 最终取决于发布消息的QoS和主题订阅的QoS，取小的
