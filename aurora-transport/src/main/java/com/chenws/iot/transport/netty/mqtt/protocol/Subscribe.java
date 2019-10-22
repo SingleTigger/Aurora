@@ -3,6 +3,7 @@ package com.chenws.iot.transport.netty.mqtt.protocol;
 import cn.hutool.core.util.StrUtil;
 import com.chenws.iot.transport.netty.mqtt.bean.RetainMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.SubscribeBO;
+import com.chenws.iot.transport.netty.mqtt.service.PacketIdService;
 import com.chenws.iot.transport.netty.mqtt.service.RetainMsgService;
 import com.chenws.iot.transport.netty.mqtt.service.SubscribeService;
 import com.chenws.iot.transport.netty.mqtt.topic.Topic;
@@ -29,6 +30,9 @@ public class Subscribe {
 
     @Autowired
     private RetainMsgService retainMsgService;
+
+    @Autowired
+    private PacketIdService packetIdService;
 
 
     public void handleSubscribe(Channel channel, MqttSubscribeMessage msg) {
@@ -92,18 +96,12 @@ public class Subscribe {
                 log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}", (String) channel.attr(AttributeKey.valueOf("clientId")).get(), retainMessageStore.getTopic(), respQoS.value());
                 channel.writeAndFlush(publishMessage);
             }
-            if (respQoS == MqttQoS.AT_LEAST_ONCE) {
+            if (respQoS == MqttQoS.AT_LEAST_ONCE || respQoS == MqttQoS.EXACTLY_ONCE) {
+                Integer packetId = packetIdService.getPacketId();
                 MqttPublishMessage publishMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
                         new MqttFixedHeader(MqttMessageType.PUBLISH, false, respQoS, false, 0),
-                        new MqttPublishVariableHeader(retainMessageStore.getTopic(), 1), Unpooled.buffer().writeBytes(retainMessageStore.getMessageBytes()));
-                log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}, messageId: {}", (String) channel.attr(AttributeKey.valueOf("clientId")).get(), retainMessageStore.getTopic(), respQoS.value(), 1);
-                channel.writeAndFlush(publishMessage);
-            }
-            if (respQoS == MqttQoS.EXACTLY_ONCE) {
-                MqttPublishMessage publishMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
-                        new MqttFixedHeader(MqttMessageType.PUBLISH, false, respQoS, false, 0),
-                        new MqttPublishVariableHeader(retainMessageStore.getTopic(), 1), Unpooled.buffer().writeBytes(retainMessageStore.getMessageBytes()));
-                log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}, messageId: {}", (String) channel.attr(AttributeKey.valueOf("clientId")).get(), retainMessageStore.getTopic(), respQoS.value(), 1);
+                        new MqttPublishVariableHeader(retainMessageStore.getTopic(), packetId), Unpooled.buffer().writeBytes(retainMessageStore.getMessageBytes()));
+                log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}, messageId: {}", channel.attr(AttributeKey.valueOf("clientId")).get(), retainMessageStore.getTopic(), respQoS.value(), 1);
                 channel.writeAndFlush(publishMessage);
             }
         });
