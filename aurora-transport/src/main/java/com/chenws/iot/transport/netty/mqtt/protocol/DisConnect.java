@@ -35,7 +35,6 @@ public class DisConnect {
         String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
         MqttSession mqttSession = mqttSessionCache.get(clientId);
         if (mqttSession != null && mqttSession.isCleanSession()) {
-            subscribeService.removeByClient(clientId);
             dupPublishMsgService.removeByClient(clientId);
             dupPubRelMsgService.removeByClient(clientId);
             log.info("DISCONNECT - clientId: {}, cleanSession: {}", clientId, mqttSession.isCleanSession());
