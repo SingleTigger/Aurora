@@ -24,7 +24,7 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
 
     private Process process;
 
-    public MqttTransportHandler(Process process) {
+    MqttTransportHandler(Process process) {
         this.process = process;
     }
 

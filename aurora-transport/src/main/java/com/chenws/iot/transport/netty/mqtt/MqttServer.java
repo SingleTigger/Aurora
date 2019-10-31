@@ -51,27 +51,33 @@ public class MqttServer {
     private Process process;
 
     @PostConstruct
-    public void init() throws Exception{
-        log.info("MQTT starting.");
-        bossGroup = new NioEventLoopGroup(bossGroupThreadCount);
-        workerGroup = new NioEventLoopGroup(workerGroupThreadCount);
-        ServerBootstrap b = new ServerBootstrap();
-        b.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel ch) throws Exception {
-                        ChannelPipeline pipeline = ch.pipeline();
-                        pipeline.addLast("decoder", new MqttDecoder(maxPayloadSize));
-                        pipeline.addLast("encoder", MqttEncoder.INSTANCE);
-                        MqttTransportHandler handler = new MqttTransportHandler(process);
-                        pipeline.addLast(handler);
-                    }
-                })
-                .childOption(ChannelOption.SO_KEEPALIVE, keepAlive);
+    public void init(){
+        new Thread(()-> {
+            log.info("MQTT starting.");
+            bossGroup = new NioEventLoopGroup(bossGroupThreadCount);
+            workerGroup = new NioEventLoopGroup(workerGroupThreadCount);
+            ServerBootstrap b = new ServerBootstrap();
+            MqttTransportHandler handler = new MqttTransportHandler(process);
+            b.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            ChannelPipeline pipeline = ch.pipeline();
+                            pipeline.addLast("decoder", new MqttDecoder(maxPayloadSize));
+                            pipeline.addLast("encoder", MqttEncoder.INSTANCE);
+                            pipeline.addLast(handler);
+                        }
+                    })
+                    .childOption(ChannelOption.SO_KEEPALIVE, keepAlive);
 
-        serverChannel = b.bind(host, port).sync().channel();
-        log.info("Mqtt started!");
+            try {
+                serverChannel = b.bind(host, port).sync().addListener(handler).channel();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            log.info("Mqtt started!");
+        }).start();
     }
 
     @PreDestroy
