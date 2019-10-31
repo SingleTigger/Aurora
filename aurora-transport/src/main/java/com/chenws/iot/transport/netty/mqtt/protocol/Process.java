@@ -1,5 +1,6 @@
 package com.chenws.iot.transport.netty.mqtt.protocol;
 
+import com.chenws.iot.transport.netty.mqtt.executor.ExecutorManager;
 import com.chenws.iot.transport.netty.mqtt.session.MqttSessionCache;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,5 +45,8 @@ public class Process {
 
     @Autowired
     private PingReq pingReq;
+
+    @Autowired
+    private ExecutorManager executorManager;
 
 }

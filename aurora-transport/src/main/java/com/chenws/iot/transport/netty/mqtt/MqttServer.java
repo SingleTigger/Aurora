@@ -41,6 +41,15 @@ public class MqttServer {
     @Value("${transport.mqtt.netty.max_payload_size}")
     private Integer maxPayloadSize;
 
+    @Value("${transport.mqtt.netty.soSndbuf}")
+    private Integer soSndbuf;
+
+    @Value("${transport.mqtt.netty.soRcvbuf}")
+    private Integer soRcvbuf;
+
+    @Value("${transport.mqtt.netty.soBacklog}")
+    private Integer soBacklog;
+
     private EventLoopGroup bossGroup;
 
     private EventLoopGroup workerGroup;
@@ -69,11 +78,17 @@ public class MqttServer {
                             pipeline.addLast(handler);
                         }
                     })
-                    .childOption(ChannelOption.SO_KEEPALIVE, keepAlive);
+                    .childOption(ChannelOption.SO_KEEPALIVE, keepAlive)
+                    //设置发送的缓冲大小
+                    .childOption(ChannelOption.SO_SNDBUF, soSndbuf)
+                    //设置接收的缓冲大小
+                    .option(ChannelOption.SO_RCVBUF, soRcvbuf)
+                    .option(ChannelOption.SO_BACKLOG, soBacklog);
 
             try {
                 serverChannel = b.bind(host, port).sync().addListener(handler).channel();
             } catch (InterruptedException e) {
+                log.info("Mqtt start failed!");
                 e.printStackTrace();
             }
             log.info("Mqtt started!");

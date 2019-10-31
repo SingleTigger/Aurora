@@ -27,6 +27,9 @@ transport:
       worker_group_thread_count: ${NETTY_WORKER_GROUP_THREADS:12}
       max_payload_size: ${NETTY_MAX_PAYLOAD_SIZE:65536}
       so_keep_alive: ${NETTY_SO_KEEPALIVE:false}
+      soRcvbuf: ${NETTY_SO_RCVBUF:65536}
+      soSndbuf: ${NETTY_SO_SNDBUF:65536}
+      soBacklog: ${NETTY_SO_BACKLOG:1024}
     # MQTT SSL configuration
     ssl:
       # Enable/disable SSL support
