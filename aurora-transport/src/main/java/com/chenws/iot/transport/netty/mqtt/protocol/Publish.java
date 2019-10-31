@@ -1,5 +1,7 @@
 package com.chenws.iot.transport.netty.mqtt.protocol;
 
+import com.chenws.iot.common.executor.CustomThreadFactory;
+import com.chenws.iot.common.executor.RejectHandler;
 import com.chenws.iot.transport.netty.mqtt.bean.DupPublishMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.RetainMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.SubscribeBO;
@@ -11,11 +13,18 @@ import com.chenws.iot.transport.netty.mqtt.session.MqttSessionCache;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static com.chenws.iot.common.constant.JvmCoreThreadConstant.coreThreadNum;
 
 /**
  * Created by chenws on 2019/10/10.
@@ -38,6 +47,15 @@ public class Publish {
 
     @Autowired
     private PacketIdService packetIdService;
+
+    @Getter
+    private ExecutorService executorService = new ThreadPoolExecutor(coreThreadNum * 2,
+            coreThreadNum * 2,
+            60000,
+            TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(100000),
+            new CustomThreadFactory("ConnectThread"),
+            new RejectHandler("connect", 100000));
 
 
     public void handlePublish(Channel channel, MqttPublishMessage msg) {

@@ -4,6 +4,7 @@ import com.chenws.iot.transport.netty.mqtt.bean.DupPubRelMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.DupPublishMessageBO;
 import com.chenws.iot.transport.netty.mqtt.service.DupPubRelMsgService;
 import com.chenws.iot.transport.netty.mqtt.service.DupPublishMsgService;
+import com.chenws.iot.transport.netty.mqtt.service.IdentifyValidService;
 import com.chenws.iot.transport.netty.mqtt.service.SubscribeService;
 import com.chenws.iot.transport.netty.mqtt.session.MqttSession;
 import com.chenws.iot.transport.netty.mqtt.session.MqttSessionCache;
@@ -14,6 +15,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.AttributeKey;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -36,6 +38,10 @@ public class Connect {
     @Autowired
     private DupPubRelMsgService dupPubRelMsgService;
 
+    @Autowired
+    @Qualifier("password")
+    private IdentifyValidService identifyValidService;
+
     public void handleConnect(Channel channel, MqttConnectMessage msg) {
         if (msg.decoderResult().isFailure()) {
             Throwable cause = msg.decoderResult().cause();
@@ -54,26 +60,29 @@ public class Connect {
             replyConnAckMessage(channel,MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
             return;
         }
-        //TODO valid username & password
+        //验证客户端
+        String userName = msg.payload().userName();
+        byte[] password = msg.payload().passwordInBytes();
+        identifyValidService.isValid(userName,password,clientIdentifier);
+
         if(mqttSessionCache.containsKey(clientIdentifier)){
             MqttSession mqttSession = mqttSessionCache.get(clientIdentifier);
-            boolean cleanSession = mqttSession.isCleanSession();
-            if(cleanSession){
-                //清除session
-                mqttSessionCache.remove(clientIdentifier);
-                //清除相关的主题订阅
-                subscribeService.removeByClient(clientIdentifier);
-                //清除重发publish消息
-                dupPublishMsgService.removeByClient(clientIdentifier);
-                //清除重发pubrel消息
-                dupPubRelMsgService.removeByClient(clientIdentifier);
-            }
-            //把之前的session关闭
             mqttSession.getChannel().close();
+            mqttSessionCache.remove(clientIdentifier);
         }
 
-        //处理遗嘱信息
+        boolean cleanSession = msg.variableHeader().isCleanSession();
+        if(cleanSession){
+            //清除相关的主题订阅
+            subscribeService.removeByClient(clientIdentifier);
+            //清除重发publish消息
+            dupPublishMsgService.removeByClient(clientIdentifier);
+            //清除重发pubrel消息
+            dupPubRelMsgService.removeByClient(clientIdentifier);
+        }
+
         MqttSession mqttSession = new MqttSession(msg.payload().clientIdentifier(), channel, msg.variableHeader().isCleanSession(), null);
+        //处理遗嘱信息
         if (msg.variableHeader().isWillFlag()){
             MqttPublishMessage willMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
                     new MqttFixedHeader(MqttMessageType.PUBLISH,false, MqttQoS.valueOf(msg.variableHeader().willQos()),msg.variableHeader().isWillRetain(),0),
@@ -90,18 +99,18 @@ public class Connect {
         channel.attr(AttributeKey.valueOf("clientId")).set(msg.payload().clientIdentifier());
         MqttConnAckMessage mqttConnAckMessage = (MqttConnAckMessage) MqttMessageFactory.newMessage(
                 new MqttFixedHeader(MqttMessageType.CONNACK,false,MqttQoS.AT_MOST_ONCE,false,0),
-                new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_ACCEPTED,!msg.variableHeader().isCleanSession()),
+                new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_ACCEPTED,!cleanSession),
                 null
         );
         channel.writeAndFlush(mqttConnAckMessage);
 
         // 如果cleanSession为0, 需要重发同一clientId存储的未完成的QoS1和QoS2的DUP消息
-        if (!msg.variableHeader().isCleanSession()){
+        if (!cleanSession){
             List<DupPublishMessageBO> dupPublishMessageBOS = dupPublishMsgService.get(msg.payload().clientIdentifier());
             List<DupPubRelMessageBO> dupPubRelMessageBOS = dupPubRelMsgService.get(msg.payload().clientIdentifier());
             dupPublishMessageBOS.forEach(dupPublishMessageBO -> {
                 MqttPublishMessage publishMessage = (MqttPublishMessage)MqttMessageFactory.newMessage(
-                        new MqttFixedHeader(MqttMessageType.PUBLISH,true,MqttQoS.valueOf(dupPublishMessageBO.getMqttQoS()),false,0),
+                        new MqttFixedHeader(MqttMessageType.PUBLISH,false,MqttQoS.valueOf(dupPublishMessageBO.getMqttQoS()),false,0),
                         new MqttPublishVariableHeader(dupPublishMessageBO.getTopicFilter(),dupPublishMessageBO.getMessageId()),
                         Unpooled.buffer().writeBytes(dupPublishMessageBO.getMessageBytes())
                 );

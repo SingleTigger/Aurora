@@ -1,6 +1,7 @@
 package com.chenws.iot.transport.netty.mqtt.protocol;
 
 import com.chenws.iot.transport.netty.mqtt.service.DupPubRelMsgService;
+import com.chenws.iot.transport.netty.mqtt.service.PacketIdService;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.util.AttributeKey;
@@ -18,9 +19,13 @@ public class PubComp {
     @Autowired
     private DupPubRelMsgService dupPubRelMsgService;
 
+    @Autowired
+    private PacketIdService packetIdService;
+
     public void handlePubComp(Channel channel, MqttMessageIdVariableHeader variableHeader) {
         int messageId = variableHeader.messageId();
         log.info("PUBCOMP - clientId: {}, messageId: {}", channel.attr(AttributeKey.valueOf("clientId")).get(), messageId);
         dupPubRelMsgService.remove((String)channel.attr(AttributeKey.valueOf("clientId")).get(), variableHeader.messageId());
+        packetIdService.addPacketId(messageId);
     }
 }

@@ -1,5 +1,6 @@
 package com.chenws.iot.transport.netty.mqtt;
 
+import com.chenws.iot.transport.netty.mqtt.constants.MqttTypeConstant;
 import com.chenws.iot.transport.netty.mqtt.protocol.Process;
 import com.chenws.iot.transport.netty.mqtt.session.MqttSession;
 import io.netty.channel.Channel;
@@ -24,7 +25,7 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
 
     private Process process;
 
-    public MqttTransportHandler(Process process) {
+    MqttTransportHandler(Process process) {
         this.process = process;
     }
 
@@ -43,34 +44,44 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
         }
         switch (msg.fixedHeader().messageType()) {
             case CONNECT:
-                process.getConnect().handleConnect(ctx.channel(), (MqttConnectMessage) msg);
+                Runnable connectTask = () -> process.getConnect().handleConnect(ctx.channel(), (MqttConnectMessage) msg);
+                process.getExecutorManager().getExecutor(MqttTypeConstant.CONNECT).submit(connectTask);
                 break;
             case PUBLISH:
-                process.getPublish().handlePublish(ctx.channel(), (MqttPublishMessage) msg);
+                Runnable publishTask = () -> process.getPublish().handlePublish(ctx.channel(), (MqttPublishMessage) msg);
+                process.getExecutorManager().getExecutor(MqttTypeConstant.PUBLISH).submit(publishTask);
                 break;
             case PUBACK:
-                process.getPubAck().handlePubAck(ctx.channel(), (MqttPubAckMessage) msg);
+                Runnable pubAckTask = () -> process.getPubAck().handlePubAck(ctx.channel(), (MqttPubAckMessage) msg);
+                process.getExecutorManager().getExecutor(MqttTypeConstant.PUB_ACK).submit(pubAckTask);
                 break;
             case PUBREC:
-                process.getPubRec().handlePubRec(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
+                Runnable pubRecTask = () -> process.getPubRec().handlePubRec(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
+                process.getExecutorManager().getExecutor(MqttTypeConstant.PUB_REC).submit(pubRecTask);
                 break;
             case PUBREL:
-                process.getPubRel().handlePubRel(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
+                Runnable pubRelTask = () -> process.getPubRel().handlePubRel(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
+                process.getExecutorManager().getExecutor(MqttTypeConstant.PUB_REL).submit(pubRelTask);
                 break;
             case PUBCOMP:
-                process.getPubComp().handlePubComp(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
+                Runnable pubCompTask = () -> process.getPubComp().handlePubComp(ctx.channel(), (MqttMessageIdVariableHeader) msg.variableHeader());
+                process.getExecutorManager().getExecutor(MqttTypeConstant.PUB_COMP).submit(pubCompTask);
                 break;
             case SUBSCRIBE:
-                process.getSubscribe().handleSubscribe(ctx.channel(), (MqttSubscribeMessage) msg);
+                Runnable subscribeTask = () -> process.getSubscribe().handleSubscribe(ctx.channel(), (MqttSubscribeMessage) msg);
+                process.getExecutorManager().getExecutor(MqttTypeConstant.SUBSCRIBE).submit(subscribeTask);
                 break;
             case UNSUBSCRIBE:
-                process.getUnSubscribe().handleUnSubscribe(ctx.channel(), (MqttUnsubscribeMessage) msg);
+                Runnable unSubscribeTask = () -> process.getUnSubscribe().handleUnSubscribe(ctx.channel(), (MqttUnsubscribeMessage) msg);
+                process.getExecutorManager().getExecutor(MqttTypeConstant.UNSUBSCRIBE).submit(unSubscribeTask);
                 break;
             case PINGREQ:
-                process.getPingReq().handlePingReq(ctx.channel(), msg);
+                Runnable pingReqTask = () -> process.getPingReq().handlePingReq(ctx.channel(), msg);
+                process.getExecutorManager().getExecutor(MqttTypeConstant.PING_REQ).submit(pingReqTask);
                 break;
             case DISCONNECT:
-                process.getDisConnect().handleDisConnect(ctx.channel(), msg);
+                Runnable disconnectTask = () -> process.getDisConnect().handleDisConnect(ctx.channel(), msg);
+                process.getExecutorManager().getExecutor(MqttTypeConstant.DISCONNECT).submit(disconnectTask);
                 break;
             default:
                 break;
