@@ -118,7 +118,7 @@ public class Connect {
             });
             dupPubRelMessageBOS.forEach(dupPubRelMessageBO -> {
                 MqttMessage pubRelMessage = MqttMessageFactory.newMessage(
-                        new MqttFixedHeader(MqttMessageType.PUBREL,true,MqttQoS.AT_MOST_ONCE,false,0),
+                        new MqttFixedHeader(MqttMessageType.PUBREL,false,MqttQoS.AT_MOST_ONCE,false,0),
                         MqttMessageIdVariableHeader.from(dupPubRelMessageBO.getMessageId()),
                         null
                 );
