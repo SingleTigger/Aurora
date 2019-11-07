@@ -11,9 +11,7 @@ import java.io.Serializable;
  * Created by chenws on 2019/8/31.
  */
 @Data
-public class MqttSession implements Serializable {
-
-    private static final long serialVersionUID = -2948400731390570214L;
+public class MqttSession {
 
     private String clientIdentifier;
 

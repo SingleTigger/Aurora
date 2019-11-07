@@ -6,7 +6,6 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,11 +15,14 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class PubComp {
 
-    @Autowired
-    private DupPubRelMsgService dupPubRelMsgService;
+    private final DupPubRelMsgService dupPubRelMsgService;
 
-    @Autowired
-    private PacketIdService packetIdService;
+    private final PacketIdService packetIdService;
+
+    public PubComp(DupPubRelMsgService dupPubRelMsgService, PacketIdService packetIdService) {
+        this.dupPubRelMsgService = dupPubRelMsgService;
+        this.packetIdService = packetIdService;
+    }
 
     public void handlePubComp(Channel channel, MqttMessageIdVariableHeader variableHeader) {
         int messageId = variableHeader.messageId();

@@ -14,7 +14,6 @@ import io.netty.handler.codec.mqtt.*;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.AttributeKey;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -26,21 +25,23 @@ import java.util.List;
 @Component
 public class Connect {
 
-    @Autowired
-    private MqttSessionCache mqttSessionCache;
+    private final MqttSessionCache mqttSessionCache;
 
-    @Autowired
-    private SubscribeService subscribeService;
+    private final SubscribeService subscribeService;
 
-    @Autowired
-    private DupPublishMsgService dupPublishMsgService;
+    private final DupPublishMsgService dupPublishMsgService;
 
-    @Autowired
-    private DupPubRelMsgService dupPubRelMsgService;
+    private final DupPubRelMsgService dupPubRelMsgService;
 
-    @Autowired
-    @Qualifier("password")
-    private IdentifyValidService identifyValidService;
+    private final IdentifyValidService identifyValidService;
+
+    public Connect(MqttSessionCache mqttSessionCache, SubscribeService subscribeService, DupPublishMsgService dupPublishMsgService, DupPubRelMsgService dupPubRelMsgService, @Qualifier("password") IdentifyValidService identifyValidService) {
+        this.mqttSessionCache = mqttSessionCache;
+        this.subscribeService = subscribeService;
+        this.dupPublishMsgService = dupPublishMsgService;
+        this.dupPubRelMsgService = dupPubRelMsgService;
+        this.identifyValidService = identifyValidService;
+    }
 
     public void handleConnect(Channel channel, MqttConnectMessage msg) {
         if (msg.decoderResult().isFailure()) {
@@ -118,7 +119,7 @@ public class Connect {
             });
             dupPubRelMessageBOS.forEach(dupPubRelMessageBO -> {
                 MqttMessage pubRelMessage = MqttMessageFactory.newMessage(
-                        new MqttFixedHeader(MqttMessageType.PUBREL,true,MqttQoS.AT_MOST_ONCE,false,0),
+                        new MqttFixedHeader(MqttMessageType.PUBREL,false,MqttQoS.AT_MOST_ONCE,false,0),
                         MqttMessageIdVariableHeader.from(dupPubRelMessageBO.getMessageId()),
                         null
                 );

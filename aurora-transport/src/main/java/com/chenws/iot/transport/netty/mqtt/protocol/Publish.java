@@ -1,7 +1,5 @@
 package com.chenws.iot.transport.netty.mqtt.protocol;
 
-import com.chenws.iot.common.executor.CustomThreadFactory;
-import com.chenws.iot.common.executor.RejectHandler;
 import com.chenws.iot.transport.netty.mqtt.bean.DupPublishMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.RetainMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.SubscribeBO;
@@ -13,18 +11,10 @@ import com.chenws.iot.transport.netty.mqtt.session.MqttSessionCache;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import static com.chenws.iot.common.constant.JvmCoreThreadConstant.coreThreadNum;
 
 /**
  * Created by chenws on 2019/10/10.
@@ -33,30 +23,23 @@ import static com.chenws.iot.common.constant.JvmCoreThreadConstant.coreThreadNum
 @Slf4j
 public class Publish {
 
-    @Autowired
-    private SubscribeService subscribeService;
+    private final SubscribeService subscribeService;
 
-    @Autowired
-    private MqttSessionCache mqttSessionCache;
+    private final MqttSessionCache mqttSessionCache;
 
-    @Autowired
-    private DupPublishMsgService dupPublishMsgService;
+    private final DupPublishMsgService dupPublishMsgService;
 
-    @Autowired
-    private RetainMsgService retainMsgService;
+    private final RetainMsgService retainMsgService;
 
-    @Autowired
-    private PacketIdService packetIdService;
+    private final PacketIdService packetIdService;
 
-    @Getter
-    private ExecutorService executorService = new ThreadPoolExecutor(coreThreadNum * 2,
-            coreThreadNum * 2,
-            60000,
-            TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(100000),
-            new CustomThreadFactory("ConnectThread"),
-            new RejectHandler("connect", 100000));
-
+    public Publish(SubscribeService subscribeService, MqttSessionCache mqttSessionCache, DupPublishMsgService dupPublishMsgService, RetainMsgService retainMsgService, PacketIdService packetIdService) {
+        this.subscribeService = subscribeService;
+        this.mqttSessionCache = mqttSessionCache;
+        this.dupPublishMsgService = dupPublishMsgService;
+        this.retainMsgService = retainMsgService;
+        this.packetIdService = packetIdService;
+    }
 
     public void handlePublish(Channel channel, MqttPublishMessage msg) {
         MqttQoS mqttQoS = msg.fixedHeader().qosLevel();
@@ -82,21 +65,22 @@ public class Publish {
     private void sendPublishMessage(String topic, MqttQoS mqttQoS, byte[] messageBytes, boolean retain) {
         Set<SubscribeBO> subscribeBOS = subscribeService.search(topic);
         for (SubscribeBO subscribeBO : subscribeBOS) {
-            if (mqttSessionCache.containsKey(subscribeBO.getClientId())) {
+            String clientId = subscribeBO.getClientId();
+            if (mqttSessionCache.containsKey(clientId)) {
                 // 订阅者收到MQTT消息的QoS级别, 最终取决于发布消息的QoS和主题订阅的QoS，取小的
-                MqttQoS respQoS = mqttQoS.value() > subscribeBO.getMqttQoS() ? MqttQoS.valueOf(subscribeBO.getMqttQoS()) : mqttQoS;
-                if (respQoS == MqttQoS.AT_MOST_ONCE) {
-                    MqttPublishMessage publishMessage = build(respQoS,retain,topic,0,messageBytes);
-                    log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}", subscribeBO.getClientId(), topic, respQoS.value());
-                    mqttSessionCache.get(subscribeBO.getClientId()).getChannel().writeAndFlush(publishMessage);
+                MqttQoS finalQoS = mqttQoS.value() > subscribeBO.getMqttQoS() ? MqttQoS.valueOf(subscribeBO.getMqttQoS()) : mqttQoS;
+                if (finalQoS == MqttQoS.AT_MOST_ONCE) {
+                    MqttPublishMessage publishMessage = build(finalQoS,retain,topic,0,messageBytes);
+                    log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}", clientId, topic, finalQoS.value());
+                    mqttSessionCache.get(clientId).getChannel().writeAndFlush(publishMessage);
                 }
-                if (respQoS == MqttQoS.AT_LEAST_ONCE || respQoS == MqttQoS.EXACTLY_ONCE) {
+                if (finalQoS == MqttQoS.AT_LEAST_ONCE || finalQoS == MqttQoS.EXACTLY_ONCE) {
                     Integer packetId = packetIdService.getPacketId();
-                    MqttPublishMessage publishMessage = build(respQoS,retain,topic,packetId,messageBytes);
-                    log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}, packetId: {}", subscribeBO.getClientId(), topic, respQoS.value(), packetId);
-                    DupPublishMessageBO dupPublishMessageBO = new DupPublishMessageBO(subscribeBO.getClientId(),topic,respQoS.value(),packetId,messageBytes);
+                    MqttPublishMessage publishMessage = build(finalQoS,retain,topic,packetId,messageBytes);
+                    log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}, packetId: {}", clientId, topic, finalQoS.value(), packetId);
+                    DupPublishMessageBO dupPublishMessageBO = new DupPublishMessageBO(subscribeBO.getClientId(),topic,finalQoS.value(),packetId,messageBytes);
                     dupPublishMsgService.put(subscribeBO.getClientId(), dupPublishMessageBO);
-                    mqttSessionCache.get(subscribeBO.getClientId()).getChannel().writeAndFlush(publishMessage);
+                    mqttSessionCache.get(clientId).getChannel().writeAndFlush (publishMessage);
                 }
             }
         }

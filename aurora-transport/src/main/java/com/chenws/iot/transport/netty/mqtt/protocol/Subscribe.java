@@ -1,8 +1,10 @@
 package com.chenws.iot.transport.netty.mqtt.protocol;
 
 import cn.hutool.core.util.StrUtil;
+import com.chenws.iot.transport.netty.mqtt.bean.DupPublishMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.RetainMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.SubscribeBO;
+import com.chenws.iot.transport.netty.mqtt.service.DupPublishMsgService;
 import com.chenws.iot.transport.netty.mqtt.service.PacketIdService;
 import com.chenws.iot.transport.netty.mqtt.service.RetainMsgService;
 import com.chenws.iot.transport.netty.mqtt.service.SubscribeService;
@@ -12,7 +14,6 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -25,14 +26,20 @@ import java.util.List;
 @Slf4j
 public class Subscribe {
 
-    @Autowired
-    private SubscribeService subscribeService;
+    private final SubscribeService subscribeService;
 
-    @Autowired
-    private RetainMsgService retainMsgService;
+    private final RetainMsgService retainMsgService;
 
-    @Autowired
-    private PacketIdService packetIdService;
+    private final PacketIdService packetIdService;
+
+    private final DupPublishMsgService dupPublishMsgService;
+
+    public Subscribe(SubscribeService subscribeService, RetainMsgService retainMsgService, PacketIdService packetIdService, DupPublishMsgService dupPublishMsgService) {
+        this.subscribeService = subscribeService;
+        this.retainMsgService = retainMsgService;
+        this.packetIdService = packetIdService;
+        this.dupPublishMsgService = dupPublishMsgService;
+    }
 
 
     public void handleSubscribe(Channel channel, MqttSubscribeMessage msg) {
@@ -43,23 +50,24 @@ public class Subscribe {
             for(MqttTopicSubscription mqttTopicSubscription : topicSubscriptions){
                 String topicFilter = mqttTopicSubscription.topicName();
                 MqttQoS mqttQoS = mqttTopicSubscription.qualityOfService();
-                MqttSubAckMessage subAckMessage = (MqttSubAckMessage) MqttMessageFactory.newMessage(
-                        new MqttFixedHeader(MqttMessageType.SUBACK, false, mqttQoS, false, 0),
-                        MqttMessageIdVariableHeader.from(msg.variableHeader().messageId()),
-                        new MqttSubAckPayload(mqttQoSList));
-                channel.writeAndFlush(subAckMessage);
                 this.sendRetainMessage(channel, topicFilter, mqttQoS);
-
                 Topic topic = new Topic(topicFilter);
                 SubscribeBO subscribeBO = new SubscribeBO(clientId, topic, mqttQoS.value());
                 subscribeService.put(topicFilter, subscribeBO);
                 mqttQoSList.add(mqttQoS.value());
                 log.info("SUBSCRIBE - clientId: {}, topFilter: {}, QoS: {}", clientId, topicFilter, mqttQoS.value());
             }
+            MqttSubAckMessage subAckMessage = (MqttSubAckMessage) MqttMessageFactory.newMessage(
+                    new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                    MqttMessageIdVariableHeader.from(msg.variableHeader().messageId()),
+                    new MqttSubAckPayload(mqttQoSList));
+            channel.writeAndFlush(subAckMessage);
         } else {
+            log.info("订阅主题中包含非法主题：{}", topicSubscriptions);
             channel.close();
         }
     }
+
     private boolean validTopicFilter(List<MqttTopicSubscription> topicSubscriptions) {
         for (MqttTopicSubscription topicSubscription : topicSubscriptions) {
             String topicFilter = topicSubscription.topicName();
@@ -87,13 +95,14 @@ public class Subscribe {
 
     private void sendRetainMessage(Channel channel, String topicFilter, MqttQoS mqttQoS) {
         List<RetainMessageBO> retainMessageStores = retainMsgService.search(topicFilter);
+        String clientId = (String) channel.attr(AttributeKey.valueOf("clientId")).get();
         retainMessageStores.forEach(retainMessageStore -> {
             MqttQoS respQoS = retainMessageStore.getMqttQoS() > mqttQoS.value() ? mqttQoS : MqttQoS.valueOf(retainMessageStore.getMqttQoS());
             if (respQoS == MqttQoS.AT_MOST_ONCE) {
                 MqttPublishMessage publishMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
                         new MqttFixedHeader(MqttMessageType.PUBLISH, false, respQoS, false, 0),
                         new MqttPublishVariableHeader(retainMessageStore.getTopic(), 0), Unpooled.buffer().writeBytes(retainMessageStore.getMessageBytes()));
-                log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}", (String) channel.attr(AttributeKey.valueOf("clientId")).get(), retainMessageStore.getTopic(), respQoS.value());
+                log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}", clientId, retainMessageStore.getTopic(), respQoS.value());
                 channel.writeAndFlush(publishMessage);
             }
             if (respQoS == MqttQoS.AT_LEAST_ONCE || respQoS == MqttQoS.EXACTLY_ONCE) {
@@ -101,8 +110,10 @@ public class Subscribe {
                 MqttPublishMessage publishMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
                         new MqttFixedHeader(MqttMessageType.PUBLISH, false, respQoS, false, 0),
                         new MqttPublishVariableHeader(retainMessageStore.getTopic(), packetId), Unpooled.buffer().writeBytes(retainMessageStore.getMessageBytes()));
-                log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}, messageId: {}", channel.attr(AttributeKey.valueOf("clientId")).get(), retainMessageStore.getTopic(), respQoS.value(), 1);
+                log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}, messageId: {}", clientId, retainMessageStore.getTopic(), respQoS.value(), 1);
                 channel.writeAndFlush(publishMessage);
+                DupPublishMessageBO dupPublishMessageBO = new DupPublishMessageBO(clientId,retainMessageStore.getTopic(),respQoS.value(),packetId,retainMessageStore.getMessageBytes());
+                dupPublishMsgService.put(clientId,dupPublishMessageBO);
             }
         });
     }

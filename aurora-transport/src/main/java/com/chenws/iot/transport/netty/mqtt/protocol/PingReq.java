@@ -12,13 +12,13 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class PingReq {
-    public void handlePingReq(Channel channel, MqttMessage msg) {
 
+    public void handlePingReq(Channel channel, MqttMessage msg) {
         MqttMessage pingRespMessage = MqttMessageFactory.newMessage(
                 new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0),
                 null,
                 null);
-        log.info("PINGREQ - clientId: {}", (String) channel.attr(AttributeKey.valueOf("clientId")).get());
+        log.info("PINGREQ - clientId: {}", channel.attr(AttributeKey.valueOf("clientId")).get());
         channel.writeAndFlush(pingRespMessage);
     }
 }

@@ -6,7 +6,6 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,11 +15,14 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class PubAck {
 
-    @Autowired
-    private DupPublishMsgService dupPublishMsgService;
+    private final DupPublishMsgService dupPublishMsgService;
 
-    @Autowired
-    private PacketIdService packetIdService;
+    private final PacketIdService packetIdService;
+
+    public PubAck(DupPublishMsgService dupPublishMsgService, PacketIdService packetIdService) {
+        this.dupPublishMsgService = dupPublishMsgService;
+        this.packetIdService = packetIdService;
+    }
 
     public void handlePubAck(Channel channel, MqttPubAckMessage msg) {
         int messageId = msg.variableHeader().messageId();
