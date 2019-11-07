@@ -14,11 +14,9 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -28,17 +26,20 @@ import java.util.List;
 @Slf4j
 public class Subscribe {
 
-    @Autowired
-    private SubscribeService subscribeService;
+    private final SubscribeService subscribeService;
 
-    @Autowired
-    private RetainMsgService retainMsgService;
+    private final RetainMsgService retainMsgService;
 
-    @Autowired
-    private PacketIdService packetIdService;
+    private final PacketIdService packetIdService;
 
-    @Autowired
-    private DupPublishMsgService dupPublishMsgService;
+    private final DupPublishMsgService dupPublishMsgService;
+
+    public Subscribe(SubscribeService subscribeService, RetainMsgService retainMsgService, PacketIdService packetIdService, DupPublishMsgService dupPublishMsgService) {
+        this.subscribeService = subscribeService;
+        this.retainMsgService = retainMsgService;
+        this.packetIdService = packetIdService;
+        this.dupPublishMsgService = dupPublishMsgService;
+    }
 
 
     public void handleSubscribe(Channel channel, MqttSubscribeMessage msg) {

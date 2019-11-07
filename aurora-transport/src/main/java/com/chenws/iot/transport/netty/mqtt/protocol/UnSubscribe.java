@@ -5,7 +5,6 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,8 +16,11 @@ import java.util.List;
 @Slf4j
 public class UnSubscribe {
 
-    @Autowired
-    private SubscribeService subscribeService;
+    private final SubscribeService subscribeService;
+
+    public UnSubscribe(SubscribeService subscribeService) {
+        this.subscribeService = subscribeService;
+    }
 
     public void handleUnSubscribe(Channel channel, MqttUnsubscribeMessage msg) {
         List<String> topicFilters = msg.payload().topics();
