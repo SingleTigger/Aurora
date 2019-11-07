@@ -1,16 +1,17 @@
 package com.chenws.iot.transport.netty.mqtt.protocol;
 
 import com.chenws.iot.transport.netty.mqtt.bean.DupPublishMessageBO;
-import com.chenws.iot.transport.netty.mqtt.bean.Message;
 import com.chenws.iot.transport.netty.mqtt.bean.RetainMessageBO;
 import com.chenws.iot.transport.netty.mqtt.bean.SubscribeBO;
-import com.chenws.iot.transport.netty.mqtt.service.*;
+import com.chenws.iot.transport.netty.mqtt.service.DupPublishMsgService;
+import com.chenws.iot.transport.netty.mqtt.service.PacketIdService;
+import com.chenws.iot.transport.netty.mqtt.service.RetainMsgService;
+import com.chenws.iot.transport.netty.mqtt.service.SubscribeService;
 import com.chenws.iot.transport.netty.mqtt.session.MqttSessionCache;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
@@ -22,23 +23,23 @@ import java.util.Set;
 @Slf4j
 public class Publish {
 
-    @Autowired
-    private SubscribeService subscribeService;
+    private final SubscribeService subscribeService;
 
-    @Autowired
-    private MqttSessionCache mqttSessionCache;
+    private final MqttSessionCache mqttSessionCache;
 
-    @Autowired
-    private DupPublishMsgService dupPublishMsgService;
+    private final DupPublishMsgService dupPublishMsgService;
 
-    @Autowired
-    private RetainMsgService retainMsgService;
+    private final RetainMsgService retainMsgService;
 
-    @Autowired
-    private PacketIdService packetIdService;
+    private final PacketIdService packetIdService;
 
-    @Autowired
-    private ReSendMessageService reSendMessageService;
+    public Publish(SubscribeService subscribeService, MqttSessionCache mqttSessionCache, DupPublishMsgService dupPublishMsgService, RetainMsgService retainMsgService, PacketIdService packetIdService) {
+        this.subscribeService = subscribeService;
+        this.mqttSessionCache = mqttSessionCache;
+        this.dupPublishMsgService = dupPublishMsgService;
+        this.retainMsgService = retainMsgService;
+        this.packetIdService = packetIdService;
+    }
 
     public void handlePublish(Channel channel, MqttPublishMessage msg) {
         MqttQoS mqttQoS = msg.fixedHeader().qosLevel();
@@ -77,16 +78,8 @@ public class Publish {
                     Integer packetId = packetIdService.getPacketId();
                     MqttPublishMessage publishMessage = build(finalQoS,retain,topic,packetId,messageBytes);
                     log.info("PUBLISH - clientId: {}, topic: {}, Qos: {}, packetId: {}", clientId, topic, finalQoS.value(), packetId);
-                    Message message = new Message();
-                    message.setClientId(clientId);
-                    message.setMsgId(packetId);
-                    message.setType(MqttMessageType.PUBLISH);
-                    message.setQos(finalQoS.value());
-                    message.setTopic(topic);
-                    message.setPayload(messageBytes);
-                    reSendMessageService.put(clientId,message);
-//                    DupPublishMessageBO dupPublishMessageBO = new DupPublishMessageBO(subscribeBO.getClientId(),topic,finalQoS.value(),packetId,messageBytes);
-//                    dupPublishMsgService.put(subscribeBO.getClientId(), dupPublishMessageBO);
+                    DupPublishMessageBO dupPublishMessageBO = new DupPublishMessageBO(subscribeBO.getClientId(),topic,finalQoS.value(),packetId,messageBytes);
+                    dupPublishMsgService.put(subscribeBO.getClientId(), dupPublishMessageBO);
                     mqttSessionCache.get(clientId).getChannel().writeAndFlush (publishMessage);
                 }
             }

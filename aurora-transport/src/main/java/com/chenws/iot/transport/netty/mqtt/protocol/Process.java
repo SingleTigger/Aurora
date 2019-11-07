@@ -3,7 +3,6 @@ package com.chenws.iot.transport.netty.mqtt.protocol;
 import com.chenws.iot.transport.netty.mqtt.executor.ExecutorManager;
 import com.chenws.iot.transport.netty.mqtt.session.MqttSessionCache;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,40 +12,42 @@ import org.springframework.stereotype.Component;
 @Getter
 public class Process {
 
-    @Autowired
-    private MqttSessionCache mqttSessionCache;
+    private final MqttSessionCache mqttSessionCache;
 
-    @Autowired
-    private Connect connect;
+    private final Connect connect;
 
-    @Autowired
-    private DisConnect disConnect;
+    private final DisConnect disConnect;
 
-    @Autowired
-    private Publish publish;
+    private final Publish publish;
 
-    @Autowired
-    private Subscribe subscribe;
+    private final Subscribe subscribe;
 
-    @Autowired
-    private PubAck pubAck;
+    private final PubAck pubAck;
 
-    @Autowired
-    private PubComp pubComp;
+    private final PubComp pubComp;
 
-    @Autowired
-    private PubRec pubRec;
+    private final PubRec pubRec;
 
-    @Autowired
-    private PubRel pubRel;
+    private final PubRel pubRel;
 
-    @Autowired
-    private UnSubscribe unSubscribe;
+    private final UnSubscribe unSubscribe;
 
-    @Autowired
-    private PingReq pingReq;
+    private final PingReq pingReq;
 
-    @Autowired
-    private ExecutorManager executorManager;
+    private final ExecutorManager executorManager;
 
+    public Process(Connect connect, MqttSessionCache mqttSessionCache, ExecutorManager executorManager, DisConnect disConnect, Publish publish, Subscribe subscribe, PubAck pubAck, PubComp pubComp, PubRec pubRec, PubRel pubRel, UnSubscribe unSubscribe, PingReq pingReq) {
+        this.connect = connect;
+        this.mqttSessionCache = mqttSessionCache;
+        this.executorManager = executorManager;
+        this.disConnect = disConnect;
+        this.publish = publish;
+        this.subscribe = subscribe;
+        this.pubAck = pubAck;
+        this.pubComp = pubComp;
+        this.pubRec = pubRec;
+        this.pubRel = pubRel;
+        this.unSubscribe = unSubscribe;
+        this.pingReq = pingReq;
+    }
 }

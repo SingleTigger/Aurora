@@ -13,21 +13,21 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class ReSendMessageServiceImpl implements ReSendMessageService {
 
-    private Map<String, ConcurrentHashMap<Integer, Message>> reSendMessage =new ConcurrentHashMap<>();
+    private Map<String, ConcurrentHashMap<Integer, Message>> reSendMessage = new ConcurrentHashMap<>();
 
     @Override
     public void put(String clientId, Message message) {
         ConcurrentHashMap<Integer, Message> map = reSendMessage.get(clientId);
-        if(map == null) {
+        if (map == null) {
             map = new ConcurrentHashMap<>();
-            reSendMessage.put(clientId,map);
+            reSendMessage.put(clientId, map);
         }
-        map.put(message.getMsgId(),message);
+        map.put(message.getMsgId(), message);
     }
 
     @Override
     public void remove(String clientId, Integer packetId) {
-        if(reSendMessage.containsKey(clientId)){
+        if (reSendMessage.containsKey(clientId)) {
             reSendMessage.get(clientId).remove(packetId);
         }
     }

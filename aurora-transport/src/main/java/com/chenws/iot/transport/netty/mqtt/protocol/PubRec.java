@@ -7,7 +7,6 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,11 +16,14 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class PubRec {
 
-    @Autowired
-    private DupPublishMsgService dupPublishMsgService;
+    private final DupPublishMsgService dupPublishMsgService;
 
-    @Autowired
-    private DupPubRelMsgService dupPubRelMsgService;
+    private final DupPubRelMsgService dupPubRelMsgService;
+
+    public PubRec(DupPublishMsgService dupPublishMsgService, DupPubRelMsgService dupPubRelMsgService) {
+        this.dupPublishMsgService = dupPublishMsgService;
+        this.dupPubRelMsgService = dupPubRelMsgService;
+    }
 
     public void handlePubRec(Channel channel, MqttMessageIdVariableHeader variableHeader) {
         MqttMessage pubRelMessage = MqttMessageFactory.newMessage(
@@ -30,7 +32,7 @@ public class PubRec {
                 null);
         log.info("PUBREC - clientId: {}, messageId: {}", channel.attr(AttributeKey.valueOf("clientId")).get(), variableHeader.messageId());
         dupPublishMsgService.remove((String) channel.attr(AttributeKey.valueOf("clientId")).get(), variableHeader.messageId());
-        DupPubRelMessageBO dupPubRelMessageStore = new DupPubRelMessageBO((String) channel.attr(AttributeKey.valueOf("clientId")).get(),variableHeader.messageId());
+        DupPubRelMessageBO dupPubRelMessageStore = new DupPubRelMessageBO((String) channel.attr(AttributeKey.valueOf("clientId")).get(), variableHeader.messageId());
         dupPubRelMsgService.put((String) channel.attr(AttributeKey.valueOf("clientId")).get(), dupPubRelMessageStore);
         channel.writeAndFlush(pubRelMessage);
     }
