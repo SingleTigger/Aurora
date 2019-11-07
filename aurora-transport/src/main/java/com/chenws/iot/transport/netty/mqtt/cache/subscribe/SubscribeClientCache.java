@@ -21,7 +21,7 @@ public class SubscribeClientCache {
     }
 
     public void removeTopicFilter(String clientId,String topicFilter){
-        redisTemplate.opsForSet().remove(clientId,topicFilter);
+        redisTemplate.opsForSet().remove(RedisConstant.CLIENT_TOPIC + clientId,topicFilter);
     }
 
     public Set<String> topicFilterByClientId(String clientId){

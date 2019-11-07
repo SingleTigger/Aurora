@@ -3,9 +3,7 @@ package com.chenws.iot.transport.netty.mqtt;
 import com.chenws.iot.transport.netty.mqtt.constants.MqttTypeConstant;
 import com.chenws.iot.transport.netty.mqtt.protocol.Process;
 import com.chenws.iot.transport.netty.mqtt.session.MqttSession;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -21,7 +19,8 @@ import java.net.InetSocketAddress;
  * Created by chenws on 2019/8/31.
  */
 @Slf4j
-public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessage> implements GenericFutureListener<Future<? super Void>> {
+@ChannelHandler.Sharable
+public class MqttTransportHandler extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>> {
 
     private Process process;
 
@@ -30,9 +29,10 @@ public class MqttTransportHandler extends SimpleChannelInboundHandler<MqttMessag
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, MqttMessage msg) throws Exception {
-        log.info("Accept msg: {}", msg);
-        handleMqttMessage(ctx, msg);
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        MqttMessage mqttMessage = (MqttMessage) msg;
+        log.info("Accept msg: {}", mqttMessage);
+        handleMqttMessage(ctx, mqttMessage);
     }
 
     private void handleMqttMessage(ChannelHandlerContext ctx, MqttMessage msg) {
