@@ -114,7 +114,8 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
                 if (process.getMqttSessionCache().containsKey(clientId)) {
                     MqttSession mqttSession = process.getMqttSessionCache().get(clientId);
                     if (mqttSession.getWillMessage() != null) {
-                        process.getPublish().handlePublish(ctx.channel(), mqttSession.getWillMessage());
+                        Runnable publishTask = () -> process.getPublish().handlePublish(ctx.channel(), mqttSession.getWillMessage());
+                        process.getExecutorManager().getExecutor(MqttTypeConstant.PUBLISH).submit(publishTask);
                     }
                 }
                 ctx.close();
