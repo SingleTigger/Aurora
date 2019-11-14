@@ -2,11 +2,14 @@ package com.chenws.iot.transport.netty.mqtt.bean;
 
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import lombok.Data;
+import lombok.ToString;
 
+import java.io.Serializable;
 import java.util.Map;
 
 @Data
-public class Message {
+@ToString
+public class Message implements Serializable {
 
     private int msgId;
 

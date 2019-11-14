@@ -1,4 +1,4 @@
 rootProject.name = 'Aurora'
 
 include 'aurora-common'
-include 'aurora-transport'
+include 'aurora-mqtt'
