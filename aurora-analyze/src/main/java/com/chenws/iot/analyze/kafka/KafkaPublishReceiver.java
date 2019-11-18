@@ -20,8 +20,8 @@ public class KafkaPublishReceiver {
     public void listen(ConsumerRecord<?, ?> record) {
         Optional<?> kafkaMessage = Optional.ofNullable(record.value());
         if (kafkaMessage.isPresent()) {
-            String data = (String) kafkaMessage.get();
-            log.info("----------------- message =" + data);
+            byte[] message = (byte[]) kafkaMessage.get();
+
         }
     }
 }

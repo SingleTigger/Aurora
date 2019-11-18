@@ -52,7 +52,7 @@ public class Publish {
         byte[] messageBytes = new byte[msg.payload().readableBytes()];
         msg.payload().getBytes(msg.payload().readerIndex(), messageBytes);
         //to kafka
-        kafkaPublishSender.send(PUBLISH_TOPIC,new String(messageBytes));
+        kafkaPublishSender.send(PUBLISH_TOPIC,messageBytes);
         sendPublishMessage(msg.variableHeader().topicName(), msg.fixedHeader().qosLevel(), messageBytes, false);
         if(mqttQoS == MqttQoS.AT_LEAST_ONCE){
             sendPubAckMessage(channel, msg.variableHeader().packetId());
