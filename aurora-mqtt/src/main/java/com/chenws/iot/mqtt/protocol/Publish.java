@@ -3,6 +3,7 @@ package com.chenws.iot.mqtt.protocol;
 import com.chenws.iot.mqtt.bean.DupPublishMessageBO;
 import com.chenws.iot.mqtt.bean.RetainMessageBO;
 import com.chenws.iot.mqtt.bean.SubscribeBO;
+import com.chenws.iot.mqtt.kafka.KafkaPublishSender;
 import com.chenws.iot.mqtt.service.DupPublishMsgService;
 import com.chenws.iot.mqtt.service.PacketIdService;
 import com.chenws.iot.mqtt.service.RetainMsgService;
@@ -15,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
+
+import static com.chenws.iot.common.constant.KafkaConstant.PUBLISH_TOPIC;
 
 /**
  * Created by chenws on 2019/10/10.
@@ -33,18 +36,23 @@ public class Publish {
 
     private final PacketIdService packetIdService;
 
-    public Publish(SubscribeService subscribeService, MqttSessionCache mqttSessionCache, DupPublishMsgService dupPublishMsgService, RetainMsgService retainMsgService, PacketIdService packetIdService) {
+    private final KafkaPublishSender kafkaPublishSender;
+
+    public Publish(SubscribeService subscribeService, MqttSessionCache mqttSessionCache, DupPublishMsgService dupPublishMsgService, RetainMsgService retainMsgService, PacketIdService packetIdService, KafkaPublishSender kafkaPublishSender) {
         this.subscribeService = subscribeService;
         this.mqttSessionCache = mqttSessionCache;
         this.dupPublishMsgService = dupPublishMsgService;
         this.retainMsgService = retainMsgService;
         this.packetIdService = packetIdService;
+        this.kafkaPublishSender = kafkaPublishSender;
     }
 
     public void handlePublish(Channel channel, MqttPublishMessage msg) {
         MqttQoS mqttQoS = msg.fixedHeader().qosLevel();
         byte[] messageBytes = new byte[msg.payload().readableBytes()];
         msg.payload().getBytes(msg.payload().readerIndex(), messageBytes);
+        //to kafka
+        kafkaPublishSender.send(PUBLISH_TOPIC,new String(messageBytes));
         sendPublishMessage(msg.variableHeader().topicName(), msg.fixedHeader().qosLevel(), messageBytes, false);
         if(mqttQoS == MqttQoS.AT_LEAST_ONCE){
             sendPubAckMessage(channel, msg.variableHeader().packetId());

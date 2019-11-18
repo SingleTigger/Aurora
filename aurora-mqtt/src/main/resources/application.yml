@@ -1,3 +1,20 @@
 spring:
   profiles:
     active: com
+
+#    rabbitmq:
+#      host: 139.199.5.205
+#      port: 5672
+#      username: admin
+#      password: admin
+#      #支持发布确认
+#      publisher-confirms: true
+#      #支持发布返回
+#      publisher-returns: true
+#      listener:
+#        simple:
+#          acknowledge-mode: manual
+#          concurrency: 1
+#          max-concurrency: 1
+#          retry:
+#            enabled: true

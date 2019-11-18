@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: aurora-transport
+    name: aurora-mqtt
   redis:
     host: 192.168.2.102
     port: 6379
@@ -18,19 +18,7 @@ spring:
     bootstrap-servers: 139.199.5.205:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-    consumer:
-      group-id: consumer-group
-      auto-offset-reset: earliest
-      enable-auto-commit: true
-      auto-commit-interval: 100
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring:
-          json:
-            trusted:
-              packages: com.chenws.iot.transport.netty.mqtt.bean
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 transport:
   mqtt:

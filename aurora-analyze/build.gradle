@@ -1,5 +1,5 @@
 group = 'com.chenws.iot'
-version APP_VERSION
+version = '1.0.0'
 sourceCompatibility = '1.8'
 
 repositories {
@@ -8,8 +8,9 @@ repositories {
 
 dependencies {
     compile project(':aurora-common')
-    compile group: 'io.netty', name: 'netty-all', version: '4.1.39.Final'
-//    compile group: 'org.springframework.boot', name: 'spring-boot-starter-amqp'
     compile group: 'org.springframework.cloud', name: 'spring-cloud-starter-stream-kafka'
+}
 
+test {
+    useJUnitPlatform()
 }

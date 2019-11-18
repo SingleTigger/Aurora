@@ -10,8 +10,8 @@ import java.util.List;
 public class ByteBuf2WebSocketEncoder extends MessageToMessageEncoder<ByteBuf> {
     @Override
     protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
-        BinaryWebSocketFrame fram = new BinaryWebSocketFrame();
-        fram.content().writeBytes(byteBuf);
-        list.add(fram);
+        BinaryWebSocketFrame binaryWebSocketFrame = new BinaryWebSocketFrame();
+        binaryWebSocketFrame.content().writeBytes(byteBuf);
+        list.add(binaryWebSocketFrame);
     }
 }
