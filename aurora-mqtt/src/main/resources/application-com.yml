@@ -5,7 +5,7 @@ spring:
   application:
     name: aurora-mqtt
   redis:
-    host: 192.168.2.102
+    host: 127.0.0.1
     port: 6379
     lettuce:
       pool:
@@ -14,11 +14,12 @@ spring:
         max-wait: -1ms
         min-idle: 1
       shutdown-timeout: 86400ms
+    database: 2
   kafka:
-    bootstrap-servers: 139.199.5.205:9092
+    bootstrap-servers: 127.0.0.1:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
 
 transport:
   mqtt:
