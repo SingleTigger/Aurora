@@ -2,3 +2,4 @@ rootProject.name = 'Aurora'
 
 include 'aurora-common'
 include 'aurora-mqtt'
+include 'aurora-analyze'

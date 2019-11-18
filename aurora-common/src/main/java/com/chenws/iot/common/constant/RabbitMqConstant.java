@@ -1,4 +1,4 @@
-package com.chenws.iot.mqtt.constants;
+package com.chenws.iot.common.constant;
 
 /**
  * Created by chenws on 2019/11/12.
