@@ -13,9 +13,9 @@ import org.springframework.stereotype.Component;
 public class KafkaPublishSender {
 
     @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private KafkaTemplate<String, byte[]> kafkaTemplate;
 
-    public void send(String topic,String message) {
+    public void send(String topic,byte[] message) {
         if(message == null)
             return;
         kafkaTemplate.send(topic,message);
