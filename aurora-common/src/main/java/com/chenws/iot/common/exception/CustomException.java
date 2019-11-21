@@ -1,10 +1,12 @@
 package com.chenws.iot.common.exception;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Created by chenws on 2019/8/31.
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class CustomException extends RuntimeException {
 

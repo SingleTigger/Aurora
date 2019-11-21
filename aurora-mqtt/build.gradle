@@ -11,5 +11,7 @@ dependencies {
     compile group: 'io.netty', name: 'netty-all', version: '4.1.39.Final'
 //    compile group: 'org.springframework.boot', name: 'spring-boot-starter-amqp'
     compile group: 'org.springframework.cloud', name: 'spring-cloud-starter-stream-kafka'
+    annotationProcessor 'org.projectlombok:lombok:1.18.8'
+    compileOnly 'org.projectlombok:lombok:1.18.8'
 
 }

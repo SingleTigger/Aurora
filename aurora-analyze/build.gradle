@@ -9,8 +9,7 @@ repositories {
 dependencies {
     compile project(':aurora-common')
     compile group: 'org.springframework.cloud', name: 'spring-cloud-starter-stream-kafka'
-}
+    compileOnly 'org.projectlombok:lombok:1.18.8'
+    annotationProcessor 'org.projectlombok:lombok:1.18.8'
 
-test {
-    useJUnitPlatform()
 }
