@@ -1,10 +1,9 @@
 package com.chenws.iot.mqtt.service.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.chenws.iot.mqtt.service.RetainMsgService;
+import com.chenws.iot.common.utils.RedisUtil;
 import com.chenws.iot.mqtt.bean.RetainMessageBO;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.chenws.iot.mqtt.service.RetainMsgService;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -17,27 +16,30 @@ import static com.chenws.iot.common.constant.RedisConstant.RETAIN_MESSAGE;
 @Service
 public class RetainMsgServiceImpl implements RetainMsgService {
 
-    @Autowired
-    private RedisTemplate redisTemplate;
+    private final RedisUtil redisUtil;
+
+    public RetainMsgServiceImpl(RedisUtil redisUtil) {
+        this.redisUtil = redisUtil;
+    }
 
     @Override
     public void put(String topic, RetainMessageBO retainMessageStore) {
-        redisTemplate.opsForValue().set(RETAIN_MESSAGE + topic, retainMessageStore);
+        redisUtil.set(RETAIN_MESSAGE + topic, retainMessageStore);
     }
 
     @Override
     public RetainMessageBO get(String topic) {
-        return (RetainMessageBO) redisTemplate.opsForValue().get(RETAIN_MESSAGE + topic);
+        return (RetainMessageBO) redisUtil.get(RETAIN_MESSAGE + topic);
     }
 
     @Override
     public void remove(String topic) {
-        redisTemplate.delete(RETAIN_MESSAGE + topic);
+        redisUtil.delete(RETAIN_MESSAGE + topic);
     }
 
     @Override
     public boolean containsKey(String topic) {
-        return redisTemplate.hasKey(RETAIN_MESSAGE + topic);
+        return redisUtil.hasKey(RETAIN_MESSAGE + topic);
     }
 
     @Override
@@ -49,11 +51,11 @@ public class RetainMsgServiceImpl implements RetainMsgService {
             }
         } else {
             Map<String, RetainMessageBO> map = new HashMap<>();
-            Set<String> set = redisTemplate.keys(RETAIN_MESSAGE + "*");
+            Set<String> set = redisUtil.getKeys(RETAIN_MESSAGE + "*");
             if (set != null) {
                 set.forEach(
                         entry -> {
-                            map.put(entry.substring(RETAIN_MESSAGE.length()), (RetainMessageBO) redisTemplate.opsForValue().get(entry));
+                            map.put(entry.substring(RETAIN_MESSAGE.length()), (RetainMessageBO) redisUtil.get(entry));
                         }
                 );
             }

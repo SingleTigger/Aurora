@@ -1,5 +1,6 @@
 package com.chenws.iot.analyze.executor;
 
+import com.chenws.iot.common.executor.CustomThreadFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,8 @@ public final class ExecutorManager {
 
     @Bean
     public ExecutorService handlePublishMsg(){
-        return new ThreadPoolExecutor(5,20,60000,TimeUnit.SECONDS,new LinkedBlockingQueue<>());
+        return new ThreadPoolExecutor(5,20,60000,TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),new CustomThreadFactory("handlePublishMsg"));
     }
 
 }

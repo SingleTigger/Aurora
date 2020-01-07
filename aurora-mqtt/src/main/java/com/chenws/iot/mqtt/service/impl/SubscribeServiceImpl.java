@@ -17,11 +17,14 @@ import java.util.Set;
 @Service
 public class SubscribeServiceImpl implements SubscribeService {
 
-    @Autowired
-    private SubscribeClientCache subscribeClientCache;
+    private final SubscribeClientCache subscribeClientCache;
 
-    @Autowired
-    private CTrie cTrie;
+    private final CTrie cTrie;
+
+    public SubscribeServiceImpl(SubscribeClientCache subscribeClientCache, CTrie cTrie) {
+        this.subscribeClientCache = subscribeClientCache;
+        this.cTrie = cTrie;
+    }
 
     @Override
     public void put(String topicFilter, SubscribeBO subscribeBO) {
@@ -38,9 +41,9 @@ public class SubscribeServiceImpl implements SubscribeService {
 
     @Override
     public void removeByClient(String clientId) {
-        Set<String> topicFilters = subscribeClientCache.topicFilterByClientId(clientId);
+        Set<Object> topicFilters = subscribeClientCache.topicFilterByClientId(clientId);
         topicFilters.forEach(topicFilter -> {
-            Topic topic = new Topic(topicFilter);
+            Topic topic = new Topic(String.valueOf(topicFilter));
             cTrie.removeFromTree(topic,clientId);
         });
     }

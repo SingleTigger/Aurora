@@ -15,8 +15,11 @@ import java.util.*;
 @Service
 public class DupPubRelMsgServiceImpl implements DupPubRelMsgService {
 
-    @Autowired
-    private RedisTemplate redisTemplate;
+    private final RedisTemplate redisTemplate;
+
+    public DupPubRelMsgServiceImpl(RedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     @Override
     public void put(String clientId, DupPubRelMessageBO dupPubRelMessageStore) {
@@ -26,12 +29,8 @@ public class DupPubRelMsgServiceImpl implements DupPubRelMsgService {
     @Override
     public List<DupPubRelMessageBO> get(String clientId) {
         Map<Integer, DupPubRelMessageBO> entries = redisTemplate.opsForHash().entries(RedisConstant.DUP_PUBREL_MESSAGE + clientId);
-        Map<Integer, DupPubRelMessageBO> integerDupPublishMessageBOMap = Optional.ofNullable(entries).orElseGet(this::initMap);
+        Map<Integer, DupPubRelMessageBO> integerDupPublishMessageBOMap = Optional.ofNullable(entries).orElseGet(HashMap::new);
         return new ArrayList<>(integerDupPublishMessageBOMap.values());
-    }
-
-    private Map<Integer,DupPubRelMessageBO> initMap(){
-        return new HashMap<>();
     }
 
     @Override

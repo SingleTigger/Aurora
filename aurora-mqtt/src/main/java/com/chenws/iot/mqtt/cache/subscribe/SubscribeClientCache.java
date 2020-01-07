@@ -1,8 +1,8 @@
 package com.chenws.iot.mqtt.cache.subscribe;
 
 import com.chenws.iot.common.constant.RedisConstant;
+import com.chenws.iot.common.utils.RedisUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
@@ -13,19 +13,22 @@ import java.util.Set;
 @Component
 public class SubscribeClientCache {
 
-    @Autowired
-    private RedisTemplate redisTemplate;
+    private final RedisUtil redisUtil;
+
+    public SubscribeClientCache(RedisUtil redisUtil) {
+        this.redisUtil = redisUtil;
+    }
 
     public void putTopicFilter(String clientId,String topicFilter){
-        redisTemplate.opsForSet().add(RedisConstant.CLIENT_TOPIC + clientId,topicFilter);
+        redisUtil.sAdd(RedisConstant.CLIENT_TOPIC + clientId,topicFilter);
     }
 
     public void removeTopicFilter(String clientId,String topicFilter){
-        redisTemplate.opsForSet().remove(RedisConstant.CLIENT_TOPIC + clientId,topicFilter);
+        redisUtil.sRemove(RedisConstant.CLIENT_TOPIC + clientId,topicFilter);
     }
 
-    public Set<String> topicFilterByClientId(String clientId){
-        return redisTemplate.opsForSet().members(RedisConstant.CLIENT_TOPIC + clientId);
+    public Set<Object> topicFilterByClientId(String clientId){
+        return redisUtil.sGet(RedisConstant.CLIENT_TOPIC + clientId);
     }
 
 }

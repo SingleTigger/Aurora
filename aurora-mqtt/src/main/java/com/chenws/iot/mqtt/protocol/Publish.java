@@ -51,9 +51,6 @@ public class Publish {
         MqttQoS mqttQoS = msg.fixedHeader().qosLevel();
         byte[] messageBytes = new byte[msg.payload().readableBytes()];
         msg.payload().getBytes(msg.payload().readerIndex(), messageBytes);
-        //to kafka
-        kafkaPublishSender.send(PUBLISH_TOPIC,messageBytes);
-        sendPublishMessage(msg.variableHeader().topicName(), msg.fixedHeader().qosLevel(), messageBytes, false);
         if(mqttQoS == MqttQoS.AT_LEAST_ONCE){
             sendPubAckMessage(channel, msg.variableHeader().packetId());
         }
@@ -68,6 +65,9 @@ public class Publish {
                 retainMsgService.put(msg.variableHeader().topicName(), retainMessageBO);
             }
         }
+        //to kafka
+        kafkaPublishSender.send(PUBLISH_TOPIC,messageBytes);
+        sendPublishMessage(msg.variableHeader().topicName(), msg.fixedHeader().qosLevel(), messageBytes, false);
     }
 
     private void sendPublishMessage(String topic, MqttQoS mqttQoS, byte[] messageBytes, boolean retain) {

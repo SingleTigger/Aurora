@@ -15,27 +15,11 @@ import java.util.*;
 @Service
 public class DupPublishMsgServiceImpl implements DupPublishMsgService {
 
+    private final RedisTemplate redisTemplate;
 
-    public static void main(String[] args) {
-        int[] arr = {8,5,9,1};
-        insert(arr);
-        System.out.println(Arrays.toString(arr));
+    public DupPublishMsgServiceImpl(RedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
     }
-
-    private static void insert(int[] arr){
-        for(int i=1;i<arr.length;i++){
-            int j = i -1;
-            int temp = arr[i];
-            for(;j>=0 && arr[j] >= temp;j--){
-                arr[j+1] = arr[j];
-            }
-            arr[j+1] = temp;
-        }
-    }
-
-
-    @Autowired
-    private RedisTemplate redisTemplate;
 
     @Override
     public void put(String clientId, DupPublishMessageBO dupPublishMessageBO) {
